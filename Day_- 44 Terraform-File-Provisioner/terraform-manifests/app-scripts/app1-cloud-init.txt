@@ -1,0 +1,90 @@
+#cloud-config
+
+package_upgrade: false
+packages:
+  - httpd
+write_files:
+  - owner: root:root 
+    path: /var/www/html/index.html
+    content: |
+      <h1>Welcome to StackSimplify - APP-1</h1>
+  - owner: root:root 
+    path: /var/www/html/app1/index.html
+    content: |
+      <!DOCTYPE html> <html> <body style="background-color:rgb(250, 210, 210);"> <h1>Welcome to Stack Simplify - APP-1</h1> <p>Terraform Demo</p> <p>Application Version: V1</p> </body></html>      
+runcmd:
+  - sudo systemctl start httpd  
+  - sudo systemctl enable httpd
+  - sudo systemctl stop firewalld
+  - sudo mkdir /var/www/html/app1 
+  - [sudo, curl, -H, "Metadata:true", --noproxy, "*", "http://169.254.169.254/metadata/instance?api-version=2020-09-01", -o, /var/www/html/app1/metadata.html]
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+# Explanation: - 
+
+### cloud-config
+
+* This is the required first line in any cloud-init configuration file. It tells the cloud-init interpreter that this file is a cloud-config file using YAML syntax.
+
+### package_upgrade: false
+
+* Purpose: Controls whether all packages on the system should be upgraded during instance boot.
+* false means: Do not upgrade all installed packages when the instance starts (to speed up the setup and avoid unexpected changes).
+
+### packages:
+
+* This section tells cloud-init which Linux packages to install during boot.
+
+packages:  httpd
+
+* httpd: This installs the Apache HTTP server (commonly used on RHEL/CentOS/Amazon Linux systems).
+
+### write_files: 
+
+* This section creates or updates files on the VM with specified content and permissions.
+
+#### First file:
+
+  - owner: root: root 
+    path: /var/www/html/index.html
+    content: |
+      <h1>Welcome to StackSimplify - APP-1</h1>
+
+* Creates /var/www/html/index.html, the default landing page for Apache, owned by root.
+* Adds a simple HTML header.
+
+#### Second file:
+
+  - owner: root: root 
+    path: /var/www/html/app1/index.html
+    content: |
+      <!DOCTYPE html> <html> <body style="background-color:rgb(250, 210, 210);"> 
+      <h1>Welcome to Stack Simplify - APP-1</h1> 
+      <p>Terraform Demo</p> 
+      <p>Application Version: V1</p> 
+      </body></html>
+
+* Creates a more styled HTML page at /var/www/html/app1/index.html for the sub-path /app1.
+
+### runcmd:
+
+* Runs shell commands sequentially after everything else is done (like cloud-init’s "post-boot script").
+
+  - sudo systemctl start httpd  
+
+* Starts the Apache HTTP server.
+
+  - sudo systemctl enable httpd
+
+* Enables Apache to start automatically on every boot.
+
+  - sudo systemctl stop firewalld
+
+* Stops the firewall service, potentially to avoid port blocking (for example, HTTP port 80).
+
+  - sudo mkdir /var/www/html/app1 
+
+* Creates the /var/www/html/app1 directory (for the custom HTML page). However, it might make more sense to run this before the write_files section that writes into this directory.
+
+  - [sudo, curl, -H, "Metadata:true", --noproxy, "*", "http://169.254.169.254/metadata/instance?api-version=2020-09-01", -o, /var/www/html/app1/metadata.html]
